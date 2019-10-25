@@ -1,5 +1,4 @@
 
-#include "stdafx.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "sqlite3.h"
@@ -21,6 +20,7 @@
 const int Length = 710;
 static int count = 0;
 std::string SQlitedb="test2.db";
+std::string FilePath="";
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
 	int i;
