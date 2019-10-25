@@ -81,7 +81,6 @@ void InsertElement(char filename[1315], float MatrixH[356][2]){
 
 	/* Open database */
 	rc = sqlite3_open("test2.db", &db);
-
 	if (rc){
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 		exit(0);
@@ -95,21 +94,38 @@ void InsertElement(char filename[1315], float MatrixH[356][2]){
 	}
 	sqlite3_stmt * stat;
 	sqlite3_prepare(db, "INSERT INTO ChannelMap(ID,Position,MatrixH,Fading) VALUES(?,?,?,?)", -1, &stat, 0);
+	//以下的1,2,3,4与上一句的问号位置相对应
 	sqlite3_bind_int(stat, 1, count++);
 	sqlite3_bind_text(stat, 2, filename, strlen(filename), NULL);
-
 	sqlite3_bind_blob(stat, 3, f, Length * 4, NULL); // store MatrixH
 	sqlite3_bind_double(stat, 4, MatrixH[355][0]);
 	int result = sqlite3_step(stat);
 	sqlite3_finalize(stat); //rsset stat
-
 	sqlite3_close(db);
 
 }
 
+void GetFileInformation(char path[1315],float& MatrixHAndFading[356][2]){
+	std::fstream file;
+	file.open(path, std::ios::in);
+	if (!file){
+		_ASSERT(0);
+	}
+	else{
+		file.close();
+		FILE *file_out;
+		file_out = fopen(path, "r");
+		//NS_ASSERT_MSG(file_out , strerror(errno));
+		for (int i = 0; i < 356; i++){
+			int valu = fscanf(file_out, "%f%f\n", &(MatrixHAndFading[i][0]), &(MatrixHAndFading[i][1]));
+			valu = valu + 1;
+			//std::cout<<MatrixHAndFading[i][0]<<" "<<MatrixHAndFading[i][1]<<std::endl;
+		}
+		fclose(file_out);
+	}
+}
 
-void listFiles(const char * dir)
-{
+void listFiles(const char * dir){
 	char dirNew[200];
 	strcpy(dirNew, dir);
 	strcat(dirNew, "\\*.*");    // 在目录后面加上"\\*.*"进行第一次搜索
@@ -120,10 +136,8 @@ void listFiles(const char * dir)
 	handle = _findfirst(dirNew, &findData);
 	if (handle == -1)        // 检查是否成功
 		return;
-	do
-	{
-		if (findData.attrib & _A_SUBDIR)
-		{
+	do{
+		if (findData.attrib & _A_SUBDIR){
 			if (strcmp(findData.name, ".") == 0 || strcmp(findData.name, "..") == 0)
 				continue;
 
@@ -137,35 +151,18 @@ void listFiles(const char * dir)
 		}
 		else{
 			std::cout << findData.name << "\t" << "\n";
-			char path[1315];// = findData.name;
+
+			char pathname[1315];// = findData.name;
 			char filename[1315];
-			sprintf(path, "D:\\download\\Base-11ad-20191024\\data3\\%s",findData.name);
+			sprintf(pathname, "D:\\download\\Base-11ad-20191024\\data3\\%s",findData.name);
 			sprintf(filename, "%s", findData.name);
-			std::fstream _file;
-			_file.open(path, std::ios::in);
-			if (!_file){
-				_ASSERT(0);
-			}
-			else{
-				_file.close();
-				float aa[356][2] = { 0 };
-				FILE *file_out;
-				file_out = fopen(path, "r");
-				//NS_ASSERT_MSG(file_out , strerror(errno));
-				for (int i = 0; i < 356; i++)
-				{
-					int valu = fscanf(file_out, "%f%f\n", &(aa[i][0]), &(aa[i][1]));
-					valu = valu + 1;
-					//std::cout<<aa[i][0]<<" "<<aa[i][1]<<std::endl;
-				}
-				fclose(file_out);
-				InsertElement(filename,aa);
-			}
+			float MatrixHAndFading[356][2] = { 0 };
+			GetFileInformation(pathname,MatrixHAndFading);
+			InsertElement(filename,MatrixHAndFading);
 		}
 	} while (_findnext(handle, &findData) == 0);
 	_findclose(handle);    // 关闭搜索句柄
 }
-
 
 int main(int argc, char* argv[])
 {
